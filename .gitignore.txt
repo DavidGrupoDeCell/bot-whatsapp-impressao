@@ -1,0 +1,11 @@
+# Ignorar arquivos de ambiente virtual
+venv/
+
+# Ignorar arquivos de credenciais e segredos
+credentials.json
+credentials.json.json
+
+# Ignorar arquivos temporários do sistema
+__pycache__/
+temp_files/
+*.pyc
