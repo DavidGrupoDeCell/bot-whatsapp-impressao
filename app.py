@@ -193,7 +193,7 @@ if servico_encontrado:
         # Envia a mensagem de erro.
         msg_text = "Opa, desculpe! Tive um problema ao gerar seu Pix. Por favor, tente novamente em alguns instantes."
         response.message(msg_text)
-    else:
+    
         print("Nenhuma palavra-chave encontrada. Enviando menu de ajuda.")
         menu_ajuda = "Olá! Não entendi qual serviço você deseja. Nossos serviços disponíveis são:"
         servicos_unicos = {}
