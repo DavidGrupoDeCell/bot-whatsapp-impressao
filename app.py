@@ -54,23 +54,36 @@ def upload_to_drive(file_path, file_name, user_phone_number):
     print(f"Arquivo '{novo_nome_arquivo}' enviado para o Google Drive com ID: {file.get('id')}")
     os.remove(file_path)
 
+#
+# SUBSTITUA SUA FUNÇÃO ANTIGA POR ESTA VERSÃO CORRIGIDA
+#
 def gerar_cobranca_pix(valor, descricao):
     """Gera uma cobrança Pix única via API do Mercado Pago."""
     try:
         if not MP_ACCESS_TOKEN:
             print("ERRO: MP_ACCESS_TOKEN não encontrado nas variáveis de ambiente.")
             return None, None
+
         sdk = mercadopago.SDK(MP_ACCESS_TOKEN)
         id_unico_referencia = str(uuid.uuid4())
         hostname = os.getenv('RENDER_EXTERNAL_HOSTNAME')
         url_notificacao = f"https://{hostname}/pix-webhook" if hostname else None
+
+        # AQUI ESTÁ A MUDANÇA: Adicionamos o bloco "payer"
         request_data = {
-            "transaction_amount": round(float(valor), 2), "description": descricao,
-            "payment_method_id": "pix", "notification_url": url_notificacao,
+            "transaction_amount": round(float(valor), 2),
+            "description": descricao,
+            "payment_method_id": "pix",
+            "payer": {
+                "email": "test@example.com"  # Email genérico para o pagador
+            },
+            "notification_url": url_notificacao,
             "external_reference": id_unico_referencia
         }
+        
         payment_response = sdk.payment().create(request_data)
         payment = payment_response["response"]
+
         if payment_response["status"] in [200, 201]:
             copia_e_cola = payment["point_of_interaction"]["transaction_data"]["qr_code"]
             payment_id = payment['id']
