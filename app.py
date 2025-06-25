@@ -202,7 +202,6 @@ if servico_encontrado:
         for descricao, instrucao in servicos_unicos.items():
             menu_ajuda += f"\n\n📄 *{descricao}*: {instrucao}"
         response.message(menu_ajuda)
-
     return str(response)
 
 @app.route("/pix-webhook", methods=['POST'])
