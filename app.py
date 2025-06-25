@@ -114,14 +114,19 @@ def enviar_whatsapp(para_numero, mensagem_texto):
 
 # --- ROTAS (ENDPOINTS) DO FLASK ---
 
+#
+# SUBSTITUA TODA A SUA FUNÇÃO WHATSAPP_REPLY POR ESTA VERSÃO CORRIGIDA
+#
 @app.route("/whatsapp", methods=['POST'])
 def whatsapp_reply():
     """Rota principal que lida com as mensagens do WhatsApp."""
     num_media = int(request.values.get("NumMedia", 0))
     corpo_mensagem_normalizado = normalize_text(request.values.get('Body', ''))
     numero_cliente = request.values.get('From', '').replace('whatsapp:', '')
+    
     response = MessagingResponse()
     servico_encontrado = None
+
     print(f"Mensagem recebida de {numero_cliente}: '{request.values.get('Body', '')}' (NumMedia: {num_media})")
 
     if num_media > 0:
@@ -134,7 +139,9 @@ def whatsapp_reply():
             temp_filepath = os.path.join("temp_files", original_filename)
             with open(temp_filepath, 'wb') as f:
                 f.write(r.content)
+            
             upload_to_drive(temp_filepath, original_filename, numero_cliente)
+            
             servico_encontrado = SERVICOS['impressao']
             servico_encontrado['descricao'] = f"Impressão do arquivo '{original_filename}'"
         except Exception as e:
@@ -152,48 +159,25 @@ def whatsapp_reply():
         descricao = servico_encontrado['descricao']
         preco = servico_encontrado['preco']
         preco_formatado = f"R$ {preco:.2f}".replace('.', ',')
+        
         print(f"Gerando cobrança Pix de {preco_formatado} para '{descricao}'...")
         pix_copia_e_cola, payment_id = gerar_cobranca_pix(preco, descricao)
 
-        # Bloco novo com mensagens separadas
-# Bloco NOVO que envia mensagens separadas
-#
-# SUBSTITUA O BLOCO 'if servico_encontrado:' INTEIRO POR ESTE CÓDIGO CORRIGIDO
-#
-if servico_encontrado:
-    descricao = servico_encontrado['descricao']
-    preco = servico_encontrado['preco']
-    preco_formatado = f"R$ {preco:.2f}".replace('.', ',')
-    
-    print(f"Gerando cobrança Pix de {preco_formatado} para '{descricao}'...")
-    pix_copia_e_cola, payment_id = gerar_cobranca_pix(preco, descricao)
-
-    # --- AQUI ESTÁ A ESTRUTURA CORRETA ---
-
-    # SE a geração de Pix deu CERTO...
-    if pix_copia_e_cola:
-        # Mensagem 1: As instruções.
-        msg_instrucoes = (
-            f"Serviço: {descricao}\n"
-            f"Valor: {preco_formatado}\n\n"
-            f"✅ *Seu PIX foi gerado!*\n\n"
-            f"Copie o código da *próxima mensagem* e cole no seu app do banco."
-        )
-        response.message(msg_instrucoes)
-
-        # Mensagem 2: APENAS o código Pix.
-        response.message(pix_copia_e_cola)
-
-        # Salva o pedido na memória.
-        pedidos_pendentes[str(payment_id)] = numero_cliente
-        print(f"Aguardando pagamento para o ID {payment_id} do cliente {numero_cliente}")
-    
-    # SENÃO, se a geração de Pix FALHOU...
+        if pix_copia_e_cola:
+            msg_instrucoes = (
+                f"Serviço: {descricao}\n"
+                f"Valor: {preco_formatado}\n\n"
+                f"✅ *Seu PIX foi gerado!*\n\n"
+                f"Copie o código da *próxima mensagem* e cole no seu app do banco."
+            )
+            response.message(msg_instrucoes)
+            response.message(pix_copia_e_cola)
+            pedidos_pendentes[str(payment_id)] = numero_cliente
+            print(f"Aguardando pagamento para o ID {payment_id} do cliente {numero_cliente}")
+        else:
+            msg_text = "Opa, desculpe! Tive um problema ao gerar seu Pix. Por favor, tente novamente em alguns instantes."
+            response.message(msg_text)
     else:
-        # Envia a mensagem de erro.
-        msg_text = "Opa, desculpe! Tive um problema ao gerar seu Pix. Por favor, tente novamente em alguns instantes."
-        response.message(msg_text)
-    
         print("Nenhuma palavra-chave encontrada. Enviando menu de ajuda.")
         menu_ajuda = "Olá! Não entendi qual serviço você deseja. Nossos serviços disponíveis são:"
         servicos_unicos = {}
@@ -202,9 +186,11 @@ if servico_encontrado:
         for descricao, instrucao in servicos_unicos.items():
             menu_ajuda += f"\n\n📄 *{descricao}*: {instrucao}"
         response.message(menu_ajuda)
-    return str(response)
 
-@app.route("/pix-webhook", methods=['POST'])
+    # ESTA É A LINHA DO ERRO. Note que ela está alinhada com o 'if servico_encontrado'
+    # mas ainda está DENTRO do 'def whatsapp_reply'.
+    return str(response)
+    
 def pix_webhook_handler():
     """Recebe e processa notificações de pagamento do Mercado Pago."""
     data = request.json
