@@ -155,19 +155,29 @@ def whatsapp_reply():
         print(f"Gerando cobrança Pix de {preco_formatado} para '{descricao}'...")
         pix_copia_e_cola, payment_id = gerar_cobranca_pix(preco, descricao)
 
-        if pix_copia_e_cola:
-            msg_text = (
-                f"Serviço: {descricao}\n"
-                f"Valor: {preco_formatado}\n\n"
-                f"✅ *Seu PIX foi gerado!*\n\n"
-                f"Clique no código abaixo para copiar e pague no seu app do banco:\n\n"
-                f"`{pix_copia_e_cola}`"
-            )
-            pedidos_pendentes[str(payment_id)] = numero_cliente
-            print(f"Aguardando pagamento para o ID {payment_id} do cliente {numero_cliente}")
-        else:
-            msg_text = "Opa, desculpe! Tive um problema ao gerar seu Pix. Por favor, tente novamente em alguns instantes."
-        response.message(msg_text)
+        # Bloco novo com mensagens separadas
+if pix_copia_e_cola:
+    # Mensagem 1: As instruções
+    msg_instrucoes = (
+        f"Serviço: {descricao}\n"
+        f"Valor: {preco_formatado}\n\n"
+        f"✅ *Seu PIX foi gerado!*\n\n"
+        f"Copie o código da próxima mensagem e cole no seu app do banco."
+    )
+    response.message(msg_instrucoes)
+
+    # Mensagem 2: APENAS o código Pix
+    # Enviamos o código puro, sem aspas, acentos ou qualquer outra formatação.
+    response.message(pix_copia_e_cola)
+
+    # A lógica de salvar o pedido na memória continua a mesma
+    pedidos_pendentes[str(payment_id)] = numero_cliente
+    print(f"Aguardando pagamento para o ID {payment_id} do cliente {numero_cliente}")
+
+else:
+    # A lógica de erro continua a mesma
+    msg_text = "Opa, desculpe! Tive um problema ao gerar seu Pix. Por favor, tente novamente em alguns instantes."
+    response.message(msg_text)
     else:
         print("Nenhuma palavra-chave encontrada. Enviando menu de ajuda.")
         menu_ajuda = "Olá! Não entendi qual serviço você deseja. Nossos serviços disponíveis são:"
